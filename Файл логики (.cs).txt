@@ -1,0 +1,83 @@
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.VisualBasic;
+using System.Text;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
+using System.Windows.Shapes;
+
+namespace WpfAppSQLiteDB
+{
+    /// <summary>
+    /// Interaction logic for MainWindow.xaml
+    /// </summary>
+    public partial class MainWindow : Window
+    {
+        private ProductDbContext dbProduct = new ProductDbContext();
+        public MainWindow()
+        {
+            InitializeComponent();
+
+            CmbFiltr.ItemsSource = dbProduct.Manufacturers.ToList();
+            CmbFiltr.SelectedValuePath = "IdManufacturer";
+            CmbFiltr.DisplayMemberPath = "NameManufacturer";
+            LoadData();
+        }
+        public void LoadData()
+        {
+            var products = dbProduct.Products.Include(p => p.IdManufacturerNavigation).ToList();
+            DtgProduct.ItemsSource = products;
+        }
+
+        private void BtnSearch_Click(object sender, RoutedEventArgs e)
+        {
+            if (TxtSearch.Text == "")
+            {
+                var products = dbProduct.Products.Include(p => p.IdManufacturerNavigation).ToList();
+                DtgProduct.ItemsSource = products;
+            }
+            else
+            {
+                var products = dbProduct.Products.Include(p => p.IdManufacturerNavigation)
+                .Where(p => p.NameProduct.Contains(TxtSearch.Text)).ToList();
+                DtgProduct.ItemsSource = products;
+                if (products.Count == 0)
+                {
+                    MessageBox.Show("Такого товара нет");
+                    
+                }
+
+            }
+
+        }
+
+
+        private void BtnSortUp_Click(object sender, RoutedEventArgs e)
+        {
+            var products = dbProduct.Products.Include(p => p.IdManufacturerNavigation).
+                OrderBy(p=>p.Price).ToList();
+            DtgProduct.ItemsSource = products;
+        }
+
+        private void BtnSortDown_Click(object sender, RoutedEventArgs e)
+        {
+            var products = dbProduct.Products.Include(p => p.IdManufacturerNavigation).
+                OrderByDescending(p => p.Price).ToList();
+            DtgProduct.ItemsSource = products;
+        }
+
+        private void CmbFiltr_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            int idMan = int.Parse(CmbFiltr.SelectedValue.ToString());
+            var products = dbProduct.Products.Include(p => p.IdManufacturerNavigation)
+                .Where(p => p.IdManufacturer == idMan).ToList();
+            DtgProduct.ItemsSource = products;
+        }
+    }
+}
